@@ -1,0 +1,55 @@
+.paper-header {
+  max-width: var(--plate);
+  margin-inline: auto;
+  padding: clamp(40px, 7vw, 78px) 0 44px;
+  text-align: center;
+  border-bottom: 1px solid var(--rule);
+}
+.paper-header__acronym {
+  margin: 0 0 14px;
+  font: 500 clamp(42px, 5vw, 60px)/1 var(--font-display);
+  color: var(--ink);
+}
+.paper-header h1 {
+  margin: 0 auto;
+  max-width: 960px;
+  font: 500 clamp(28px, 3.6vw, 44px)/1.15 var(--font-display);
+  letter-spacing: -.02em;
+  text-wrap: balance;
+}
+.paper-header h1 em { color: var(--fml-ink); font-weight: inherit; }
+.paper-header__summary {
+  max-width: 760px;
+  margin: 22px auto 30px;
+  color: var(--ink-2);
+  font: 400 clamp(14px, 1.6vw, 17px)/1.65 var(--font-ui);
+  text-wrap: balance;
+}
+.paper-header__authors,.paper-header__affiliations {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 28px;
+  font-family: var(--font-ui);
+}
+.paper-header__authors { font-size: 16px; color: var(--ink); }
+.paper-header__affiliations { margin-top: 10px; font-size: 13px; color: var(--muted); }
+.paper-header sup { margin-left: 3px; margin-right: 3px; font-size: .65em; color: var(--muted); }
+.paper-header__resources {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+  margin: 30px 0 18px;
+}
+.paper-header__resources button {
+  display: flex; align-items: center; gap: 8px; padding: 12px 18px;
+  border: 1px solid var(--rule); border-radius: 999px;
+  background: var(--surface); color: var(--muted);
+  font: 400 13px var(--font-ui); cursor: not-allowed;
+}
+.paper-header__resources small { color: var(--muted); font-size: 10px; opacity: .75; }
+.paper-header__status { margin: 0; font: 400 11px var(--font-ui); color: var(--muted); }
+.coefficient-structure { margin-top: 1.5rem; scroll-margin-top: 5rem; }
+@media(max-width:420px) {
+  .paper-header__authors { gap: 10px 18px; font-size: 14px; }
+  .paper-header__resources { display: grid; grid-template-columns: 1fr 1fr; }
+  .paper-header__resources button { justify-content: center; padding: 11px 10px; }
+}

@@ -1,0 +1,27 @@
+/* Progressive disclosure for the synthetic CPQR ranking walkthrough. */
+.rank-focus { border-left: 2px solid var(--fml); padding: .15rem 0 .15rem 1rem; margin: 1rem 0; }
+.rank-status { color: var(--fml-ink); font: 400 .72rem var(--font-mono); margin-bottom: .5rem; }
+.rank-focus h4 { margin: 0 0 .4rem; color: var(--ink); font: 500 1.35rem/1.2 var(--font-display); }
+.rank-focus p { margin: 0; color: var(--ink-2); font-size: .8rem; line-height: 1.55; }
+.rank-controls { margin: 1rem 0 1.3rem; }
+.rank-capture { padding: .75rem; margin-bottom: 1.2rem; border: 1px solid var(--rule); border-radius: 6px; }
+.rank-capture-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: .35rem .65rem; color: var(--ink-2); font: 400 .75rem var(--font-ui); }
+.rank-capture-head strong { color: var(--fml-ink); font: 500 1.4rem var(--font-mono); }
+.rank-capture-delta { margin-left: auto; color: var(--muted); font-size: .7rem; }
+.rank-capture .rank-note { margin: .4rem 0 0; font-family: var(--font-ui); }
+.rank-candidates { margin-bottom: 1rem; }
+.rank-candidate { display: grid; grid-template-columns: 6rem minmax(0,1fr) 3.4rem; gap: .65rem; align-items: center; padding: .45rem 0; font: 400 .74rem var(--font-mono); }
+.rank-candidate-label { color: var(--ink-2); }
+.rank-track { height: 10px; background: var(--surface-2); }
+.rank-track > span { height: 100%; display: block; background: var(--ref); }
+.rank-candidate.is-next .rank-track > span { background: var(--fml); }
+.rank-candidate.is-next .rank-candidate-label { color: var(--fml-ink); }
+.rank-value { text-align: right; color: var(--ink-2); }
+.rank-note { font-size: .72rem; line-height: 1.55; color: var(--muted); }
+.rank-history { display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; padding-block: .8rem; border-top: 1px solid var(--rule); }
+.rank-history-label { font-size: .73rem; color: var(--ink-2); width: 100%; margin-bottom: .2rem; }
+.rank-history-chip { padding: .25rem .4rem; border: 1px solid var(--rule); border-radius: 4px; color: var(--fml-ink); font: 400 .72rem var(--font-mono); }
+@media(max-width:420px) {
+  .rank-candidate { grid-template-columns: 5rem minmax(0,1fr) 3.1rem; gap: .35rem; }
+  .rank-controls { gap: .4rem; }
+}

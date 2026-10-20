@@ -1,0 +1,61 @@
+/* Shared reading hierarchy across the paper sections and interactive figures. */
+.paper-link-unavailable,
+.ev-source.paper-link-unavailable {
+  color: var(--muted);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+.paper-link-unavailable small {
+  margin-left: .4rem;
+  font-size: .85em;
+}
+.chapter-head .cdek,
+.section-intro {
+  max-width: 64ch;
+  margin: .65rem 0 1.35rem;
+  color: var(--ink-2);
+  font: 400 .95rem/1.65 var(--font-ui);
+  text-wrap: pretty;
+}
+.result-claim,
+.fdek,
+.fml-lab-explanation > p,
+.ev-context {
+  font-family: var(--font-ui);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+.src,
+.note,
+.rank-note,
+.rank-focus p,
+.rank-history-label,
+.stepview > p,
+.result-context {
+  font-family: var(--font-ui);
+  line-height: 1.55;
+}
+.src,
+#results .src,
+.note,
+.result-context,
+.rank-note {
+  font-size: .78rem;
+}
+.coefficient-structure .section-intro {
+  margin-top: .5rem;
+  font-size: .88rem;
+}
+#ablations .chapter-head {
+  margin-bottom: 1.2rem;
+}
+#cite .section-intro {
+  font-size: .85rem;
+}
+@media (max-width: 560px) {
+  .chapter-head .cdek,
+  .section-intro {
+    font-size: .9rem;
+    line-height: 1.6;
+  }
+}

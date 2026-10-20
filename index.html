@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="Functional Memory of Low-rank Subspaces: continual retention, compact shared bases, target-data-free LoRA initialization, and description-conditioned generation and adaptation.">
+  <meta name="color-scheme" content="light dark">
+  <title>Functional Memory of Low-rank Subspaces</title>
+  <link rel="stylesheet" href="assets/fonts/fonts.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="story.css">
+  <link rel="stylesheet" href="story-hero.css">
+  <link rel="stylesheet" href="contribution-results.css">
+  <link rel="stylesheet" href="build-memory.css">
+  <link rel="stylesheet" href="adaptation-explorer.css">
+  <link rel="stylesheet" href="rank-walkthrough.css?v=capture-20261021">
+  <link rel="stylesheet" href="paper-header.css">
+  <link rel="stylesheet" href="paper-reading.css?v=unreleased-resources-20261021">
+  <script src="math-config.js"></script>
+  <script async src="assets/vendor/mathjax-3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div id="tip" aria-hidden="true"></div>
+
+<div class="navbar" id="navbar">
+  <nav class="topbar" aria-label="Sections">
+    <a class="wordmark" href="#top"><b>FML</b><span>Functional Memory of Low-rank Subspaces</span></a>
+    <div class="topnav">
+      <a href="#why" data-sec="why">Motivation</a>
+      <a href="#how" data-sec="how">Method</a>
+      <a href="#results" data-sec="results">Results</a>
+      <a href="#ablations" data-sec="ablations">Ablations</a>
+      <a href="#cite" data-sec="cite">Citation</a>
+    </div>
+  </nav>
+</div>
+
+<header class="paper-header" id="top" aria-labelledby="paper-title">
+  <p class="paper-header__acronym">FML</p>
+  <h1 id="paper-title">Continually Learning a <em>Functional Memory</em> from Task Experience</h1>
+  <p class="paper-header__summary">FML converts a stream of trained LoRAs into a shared memory that preserves past solutions and supports subsequent adaptation.</p>
+  <div class="paper-header__authors" aria-label="Authors">
+    <span>Gavin Fungtammasan<sup>1</sup></span>
+    <span>Lang Huang<sup>2</sup></span>
+  </div>
+  <div class="paper-header__affiliations">
+    <span><sup>1</sup>The University of Sydney</span>
+    <span><sup>2</sup>National Institute of Informatics</span>
+  </div>
+  <div class="paper-header__resources" role="group" aria-label="Research resources — coming soon">
+    <button type="button" disabled>Paper <small>Coming soon</small></button>
+    <button type="button" disabled>Code <small>Coming soon</small></button>
+    <button type="button" disabled>Models <small>Coming soon</small></button>
+    <button type="button" disabled>BibTeX <small>Coming soon</small></button>
+  </div>
+  <p class="paper-header__status">Under review at ICLR 2027</p>
+</header>
+
+<section class="story-hero" id="overview" aria-labelledby="story-hero-title">
+  <div class="story-hero__copy">
+    <h2 id="story-hero-title">Functional Memory of <em>Low-rank Subspaces</em></h2>
+    <div class="story-hero__description">
+      <p>Trained low-rank adapters (LoRAs) record what a model has learned from completed tasks. FML continually consolidates this task experience into a shared functional memory that preserves past solutions and provides reusable structure for future adaptation.</p>
+      <p>Each incoming adapter is reconstructed in the accumulated basis and rescaled. Predictions on unlabelled task inputs guide the addition of residual directions, while previously admitted reconstructions remain unchanged. The resulting memory supports target-data-free LoRA initialization and description-conditioned generation, with further coefficient adaptation within the frozen basis.</p>
+    </div>
+    <div class="story-hero__actions">
+      <button class="btn story-hero__play" type="button" data-play-story><svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4 2.5 13 8 4 13.5z"/></svg>Method overview<span>70 s</span></button>
+      <a href="#how">Explore the method <span aria-hidden="true">↓</span></a>
+    </div>
+  </div>
+  <div class="story-hero__art">
+    <div id="memory-scene"></div>
+    <noscript><p>Completed task adapters form a shared memory of bases, coefficients and scales. That memory supports initialisation and coefficient generation for new tasks. Enable JavaScript for the animated method overview.</p></noscript>
+  </div>
+</section>
+
+<section class="hero paper-overview" id="stream" aria-labelledby="paper-heading">
+  <h2 class="paper-overview__title" id="paper-heading">Continual construction of a <em>shared functional basis</em></h2>
+  <p class="dek">Each incoming adapter contributes the residual directions needed to recover its behaviour and is stored as coefficients and a global scale.</p>
+
+  <div class="stage" aria-label="Replay of the 440-adapter stream">
+    <div class="stage-head">
+      <div class="stage-title"><b>Basis growth over 440 adapters</b><span>SNI adapter stream</span></div>
+      <div class="fig-controls">
+        <span class="key ref"><i></i>Raw LoRAs</span>
+        <span class="key weight"><i></i>Ours, ranked by weight</span>
+        <span class="key"><i class="ramp"></i>FML</span>
+      </div>
+    </div>
+    <canvas id="heroCanvas" aria-hidden="true"></canvas>
+    <div class="stage-foot">
+      <div class="grp" style="display:flex;gap:.4rem">
+        <button class="btn icon" id="heroPlay" aria-label="Pause replay"><svg viewBox="0 0 16 16" aria-hidden="true"><path id="heroPlayIcon" d="M4 3h3v10H4zM9 3h3v10H9z"/></svg></button>
+        <div class="seg" role="group" aria-label="Replay speed">
+          <button id="heroSlow" aria-pressed="false">1×</button>
+          <button id="heroFast" aria-pressed="true">8×</button>
+        </div>
+      </div>
+      <div class="scrub" id="heroScrub" role="slider" tabindex="0" aria-label="Stream position" aria-valuemin="1" aria-valuemax="440" aria-valuenow="1"><canvas id="heroSpark"></canvas></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="label">Adapters</div><div class="value" id="stA">0 <small>/ 440</small></div><div class="sub" id="stAs"></div></div>
+      <div class="stat"><div class="label">Directions stored by FML</div><div class="value" id="stB">0</div><div class="sub" id="stBs"></div></div>
+      <div class="stat"><div class="label">Direction-count reduction</div><div class="value" id="stC">–</div><div class="sub" id="stCs"></div></div>
+    </div>
+  </div>
+
+  <div class="glance">
+    <a class="g" href="#r-consolidate"><b>22×</b><span>fewer directions than raw LoRAs, with 98.3% mean gain recovery</span></a>
+    <a class="g" href="#r-initialize"><b>73.4</b><span>mean ROUGE-L with memory-informed initialization, vs 71.8 for rank-4 LoRA</span></a>
+    <a class="g" href="#r-generate"><b>85.0%</b><span>mean accuracy after coefficient adaptation, from 73.5% with generated coefficients</span></a>
+  </div>
+</section>
+
+<section id="why" class="chapter">
+  <div class="chapter-head"><div class="kicker">Motivation</div><h2>Scale correction and task-dependent directions</h2><p class="cdek">Restoring update magnitude often recovers much of the lost task performance, while a small number of task-dependent directions recovers further behaviour.</p></div>
+
+  <div class="feature" id="figAlpha">
+    <div class="feature-text">
+      <span class="fnum">1</span>
+      <h3>Scale correction after directional reduction</h3>
+      <p class="fdek">Rescaling a reduced adapter can recover task performance without restoring discarded directions.</p>
+      <div class="chips" id="alphaTasks" role="group" aria-label="Adapter"></div>
+      <div class="pair" id="alphaRead"></div>
+      <div class="ctl">
+        <label for="alphaSlider"><span>Scale α</span><output id="alphaOut">1.00×</output></label>
+        <input type="range" id="alphaSlider" min="0" max="1000" value="500" step="1">
+      </div>
+      <div class="fig-controls"><button class="btn" id="alphaOne">α = 1</button><button class="btn primary" id="alphaSnap">Norm-matched α</button></div>
+    </div>
+    <div class="feature-vis">
+      <div class="chart" id="alphaGeo"></div>
+      <div class="chart" id="alphaChart"></div>
+    </div>
+    <p class="src">Figure 6. One of 16 directions is retained. Recovery measures ROUGE-L gain over the base model. Digitized curves with interpolated readouts.</p>
+  </div>
+
+  <div class="feature flip" id="figGates">
+    <div class="feature-vis">
+      <div class="waffle"><canvas id="gateWaffle"></canvas></div>
+      <div class="chart" id="gateBullet"></div>
+    </div>
+    <div class="feature-text">
+      <span class="fnum">2</span>
+      <h3>Task-dependent residual directions</h3>
+      <p class="fdek">Sparse gates identify a small set of directions that retains task behaviour.</p>
+      <div class="chips" id="gateTasks" role="group" aria-label="Task"></div>
+      <div class="seg" id="gateLambda" role="group" aria-label="Penalty λ"></div>
+      <div class="big-readout" id="gateRead"></div>
+    </div>
+    <p class="src">Table 5. Active directions among 3,072 candidates at penalty λ. Cell positions are schematic.</p>
+  </div>
+
+  <p class="bridge">These observations motivate <b>global norm matching</b> before <b>functional ranking and admission of residual directions</b>.</p>
+</section>
+
+<section id="how" class="chapter">
+  <div class="chapter-head"><div class="kicker">Method</div><h2>Functional memory construction</h2><p class="cdek">FML reconstructs each adapter in the current basis and admits residual directions according to their effect on model predictions.</p></div>
+  <div id="method-lab" class="build-memory-lab"></div>
+  <div class="chapter-head live-admission-head"><h3>Functional threshold and admission</h3><p class="cdek">Functional capture determines how many ranked residual directions are needed to recover the incoming adapter’s behaviour.</p></div>
+  <div class="plate">
+    <div class="pg" id="pg">
+      <div class="pg-bar">
+        <div class="grp">
+          <button class="btn primary" id="pgRun"><svg viewBox="0 0 16 16" aria-hidden="true"><path id="pgRunIcon" d="M4 2.5v11l9-5.5z"/></svg><span id="pgRunLabel">Run stream</span></button>
+          <button class="btn icon" id="pgPrev" aria-label="Previous adapter"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3v10L4 8z"/></svg></button>
+          <button class="btn icon" id="pgNext" aria-label="Next adapter"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10l7-5z"/></svg></button>
+          <button class="btn" id="pgNew">New stream</button>
+        </div>
+        <div class="grp settings">
+          <div class="ctl"><label for="pgTau"><span>τ</span><output id="pgTauOut">0.980</output></label><input type="range" id="pgTau" min="900" max="995" value="980" step="5"></div>
+          <div class="ctl"><label for="pgQ"><span>Probes</span><output id="pgQOut">48</output></label><input type="range" id="pgQ" min="4" max="96" value="48" step="4"></div>
+          <label class="switch" for="pgNM"><input type="checkbox" id="pgNM" checked><span class="track"></span>Norm matching</label>
+        </div>
+        <span class="toast" id="pgToast"></span>
+      </div>
+      <div class="pg-body">
+        <div class="pg-main">
+          <div class="pg-task">
+            <h3 id="pgTitle">Adapter 1 of 40</h3>
+            <span class="tag" id="pgTag"></span>
+          </div>
+          <div class="ctl adapter-ctl"><label for="pgT"><span>Adapter</span><output id="pgTOut">1</output></label><input type="range" id="pgT" min="1" max="40" value="1" step="1"></div>
+          <div class="steps" role="tablist" aria-label="Admission steps" id="pgSteps"></div>
+          <div class="stepview" id="pgView" role="tabpanel"></div>
+        </div>
+        <div class="pg-side">
+          <div>
+            <div class="panel-title">Memory size</div>
+            <div class="legend"><span class="key ref"><i></i>Raw</span><span class="key weight"><i></i>By weight</span><span class="key fml"><i></i>FML</span></div>
+            <div class="chart" id="pgGrowth"></div>
+          </div>
+          <div>
+            <div class="panel-title">Cumulative admitted directions <span>same memory, two rankings</span></div>
+            <div id="pgSame"></div>
+          </div>
+          <div class="audit" id="pgAudit"><span class="ok" aria-hidden="true">✓</span><span>Stored tasks after the last admission: max change <b id="pgAuditVal">0</b></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <details class="more">
+    <summary>Functional capture and preservation</summary>
+    <div class="more-body">
+      <div class="grid2">
+        <div>
+          <h4>Functional capture and the global scale</h4>
+          <div class="eqn mjx-box">\[ C_t = 1-\frac{\mathbb{E}_{x}\,\mathrm{KL}\big(p_t\,\|\,\widehat p_t\big)}{\mathbb{E}_{x}\,\mathrm{KL}\big(p_t\,\|\,p_0\big)} \qquad \alpha_t=\sqrt{\frac{\sum_m \lVert \Delta W_{t,m}\rVert_F^2}{\sum_m \lVert \widetilde{\Delta W}_{t,m}\rVert_F^2}} \]</div>
+          <p class="note">Functional capture measures recovery relative to the base model. Admission checks both capture and residual KL.</p>
+        </div>
+        <div>
+          <h4>Preservation of admitted reconstructed updates</h4>
+          <div class="eqn mjx-box">\[ \begin{bmatrix} U_B & D_B \end{bmatrix} \begin{bmatrix} G_t & 0 \\ 0 & 0 \end{bmatrix} \begin{bmatrix} U_A & D_A \end{bmatrix}^{\top} = U_B\,G_t\,U_A^{\top} \]</div>
+          <p class="note">Appending basis directions and zero-padding stored coefficients leaves each admitted reconstructed update unchanged.</p>
+        </div>
+      </div>
+      <div class="fig" id="figRerank">
+        <div class="fig-head">
+          <h3>Functional re-ranking</h3>
+          <div class="fig-controls"><button class="btn primary" id="rrBtn">Re-rank</button></div>
+        </div>
+        <p class="section-intro">Re-ranking concentrates cross-task usage in leading directions while preserving the represented updates.</p>
+        <div class="grid2">
+          <div>
+            <div class="panel-title">Cross-task usage per direction <span id="rrNote">layer-1 input basis</span></div>
+            <div class="legend"><span class="key ref"><i class="sq"></i>Admission order</span><span class="key fml"><i class="sq"></i>Re-ranked</span></div>
+            <div class="chart" id="rrChart"></div>
+          </div>
+          <div><div class="panel-title">What changed</div><div class="readout" id="rrRead"></div></div>
+        </div>
+      </div>
+    </div>
+  </details>
+</section>
+
+
+
+<section id="results" class="chapter" aria-labelledby="results-title">
+  <div class="chapter-head">
+    <div class="kicker">Evaluation</div>
+    <h2 id="results-title">Experiments</h2>
+    <p class="cdek">We evaluate continual retention and basis growth, then test memory reuse through LoRA initialization and description-conditioned generation and adaptation.</p>
+  </div>
+  <nav class="contribution-index" aria-label="Main contributions">
+    <a href="#r-consolidate"><span>01 / Continual learning</span><b>Compactness and retention</b><small>≈22× fewer directions · no post-admission forgetting</small></a>
+    <a href="#r-initialize"><span>02 / Initialization</span><b>Target-data-free LoRA initialization</b><small>73.4 ± 1.0 mean ROUGE-L after 256 updates</small></a>
+    <a href="#r-generate"><span>03 / Generation and adaptation</span><b>Within-basis coefficient adaptation</b><small>73.5% generated → 85.0% adapted mean accuracy</small></a>
+  </nav>
+
+  <article class="contribution" id="r-consolidate" aria-labelledby="cl-heading">
+    <div class="contribution-head"><span class="rq">01</span><h3 id="cl-heading">Continual learning: compactness and retention</h3></div>
+    <p class="result-claim">Across 440 SNI adapters, FML uses <strong>≈22× fewer basis directions</strong> than separate LoRAs while recovering <strong>98.33% of their ROUGE-L gain</strong> on average. Stored reconstructions remain fixed after admission. All three vision benchmarks report <strong>0.00 forgetting</strong>.</p>
+    <div class="grid2 primary-figures">
+<div class="fig" id="figStream">
+        <div class="fig-head"><h3>(a) Compactness over 440 adapters</h3><span class="tagline">log scale</span></div>
+        <div class="legend"><span class="key ref"><i></i>Raw LoRAs</span><span class="key weight"><i></i>Ours, ranked by weight</span><span class="key fml"><i></i>FML</span></div>
+        <div class="chart" id="chGrowth"></div>
+        <p class="src">Figure 3c. Basis direction counts exclude coefficient and scale storage and vector lengths.</p>
+      </div><div id="r-preserve"><div class="fig" id="figVision">
+        <div class="fig-head"><h3>(b) Retention across 10 vision tasks</h3><div class="seg" role="group" aria-label="Dataset" id="visionDS"></div></div>
+        <div class="chart" id="chVision"></div>
+        <details class="tbl"><summary>Table</summary><div class="tablewrap" id="visionTable"></div></details>
+        <p class="src">Table 1. Final accuracy and forgetting over 10 tasks. Baselines follow SHARE. FML consolidates independently trained adapters. Caltech uses a stratified 70/30 split.</p>
+      </div></div>
+    </div>
+    <p class="result-context">Preservation applies to the admitted reconstructions, including any approximation made at admission.</p>
+<details class="more result-detail" id="evidence-compact"><summary>Matched-capacity recovery and basis diagnostics</summary><div class="more-body"><div class="fig" id="figRecon">
+        <div class="fig-head"><h3>Recovery at matched basis capacity</h3><span class="tagline">≈321 directions per module side</span></div>
+        <div class="chart" id="chReconMean"></div>
+        <div class="panel-title" style="margin-top:.6rem">Distribution of task-level gain recovery</div>
+        <div class="chart" id="chReconDist"></div>
+        <p class="src">Figure 3d. UWSH is fit offline to all 440 adapters.</p>
+      </div><details class="more">
+      <summary>Construction diagnostics: capture, ranking and basis usage</summary>
+      <div class="more-body">
+        <div class="grid2">
+          <div><div class="panel-title">Capture before admission <span>reuse of earlier directions</span></div><div class="chart" id="chPre"></div></div>
+          <div><div class="panel-title">FML size as a share of ranking by weight</div><div class="chart" id="chRatio"></div></div>
+        </div>
+        <div class="subhead">
+          <p>Both rankings target τ = 0.98, with a best-tested fallback when the admission criterion is unmet.</p>
+          <div class="seg" role="group" aria-label="Statistic" id="streamStat"><button aria-pressed="true" data-v="median">Median</button><button aria-pressed="false" data-v="mean">Mean</button></div>
+        </div>
+        <div class="grid2">
+          <div><div class="panel-title">Capture after admission</div><div class="chart" id="chPost"></div></div>
+          <div class="fig-inline" id="figUsage">
+            <div class="panel-title">Cross-task usage per direction, after re-ranking</div>
+            <div class="seg" role="group" aria-label="Basis side" id="usageSide"><button aria-pressed="true" data-v="A">Input side</button><button aria-pressed="false" data-v="B">Output side</button></div>
+            <div class="legend"><span class="key fml"><i></i>FML</span><span class="key ref"><i></i>UWSH (K = 321)</span></div>
+            <div class="chart" id="chUsage"></div>
+          </div>
+        </div>
+        <p class="src">Figures 3a–b and 8.</p>
+      </div>
+    </details></div></details><details class="more result-detail" id="evidence-preserve"><summary>Retention over 22 language tasks</summary><div class="more-body"><div class="fig" id="figShare">
+        <div class="fig-head"><h3>Language: 22 tasks, 11 steps</h3>
+          <div class="seg" role="group" aria-label="View" id="shareView"><button aria-pressed="true" data-v="step">Gap to oracle</button><button aria-pressed="false" data-v="task">Per task</button></div>
+        </div>
+        <div class="legend" id="shareLegend"></div>
+        <div class="chart" id="chShare"></div>
+        <div class="big-readout"><div>FML<b>74.80</b></div><div>SHARE<b>67.47</b></div><div>Task LoRAs<b>76.38</b></div></div>
+        <p class="src">Figure 4. SHARE and oracle results are reported by SHARE. SHARE at T-3 is +34.6, outside the plotted range.</p>
+      </div></div></details>
+  </article>
+
+  <article class="contribution" id="r-initialize" aria-labelledby="init-heading">
+    <span id="r-reuse" class="anchor-alias" aria-hidden="true"></span>
+    <div class="contribution-head"><span class="rq">02</span><h3 id="init-heading">Target-data-free LoRA initialization</h3></div>
+    <p class="result-claim">FML-Init uses globally ranked memory directions to initialize a new LoRA without target inputs. After 256 updates, it reaches <strong>73.4 ± 1.0 mean ROUGE-L</strong>, compared with <strong>71.8 ± 1.0</strong> for rank-4 LoRA. Results are averaged over five held-out SNI tasks and three seeds.</p>
+<div class="fig" id="figInit">
+        <div class="fig-head"><h3>Initialization under a matched adaptation budget</h3><div class="seg" role="group" aria-label="Task" id="initTask"></div></div>
+        <div class="chart" id="chInit"></div>
+        <details class="tbl"><summary>Table</summary><div class="tablewrap" id="initTable"></div></details>
+        <p class="src">Table 2. Matched total rank 384 and labelled fine-tuning budget. Intervals show reported ± values over three seeds. The dashed, fully trained rank-16 reference uses a different protocol.</p>
+      </div><details class="more result-detail" id="initialization-support"><summary>Initialization with different amounts of prior experience</summary><div class="more-body"><div class="fig" id="figExp">
+            <div class="fig-head"><h3>Effect of prior task experience on adaptation</h3></div>
+            <div class="chart" id="chExp"></div>
+            <p class="src">Source: Figure 13. Dots are seeds.</p>
+          </div></div></details>
+  </article>
+
+  <article class="contribution" id="r-generate" aria-labelledby="gen-heading">
+    <div class="contribution-head"><span class="rq">03</span><h3 id="gen-heading">Description-conditioned generation and within-basis adaptation</h3></div>
+    <p class="result-claim">Starting from description-generated coefficients, supervised adaptation increases mean accuracy from <strong>73.5% to 85.0%</strong> across seven downstream language benchmarks. <strong>Adaptation updates only the coefficients in the frozen functional basis.</strong></p>
+    <div id="adaptation-explorer"></div>
+    <details class="more result-detail" id="evidence-reuse"><summary>Adaptation curves across benchmarks</summary><div class="more-body">
+      <div class="fig" id="figAdapt">
+        <div class="fig-head"><h3>Adaptation from generated coefficients</h3><div class="seg" role="group" aria-label="Benchmark" id="adaptBench"></div></div>
+        <div class="panel-title">Accuracy (%)<span>Zero-shot generation → supervised coefficient adaptation</span></div>
+        <div class="chart" id="chAdapt"></div>
+        <p class="src">Tables 3–4. Zero-shot generation is followed by supervised coefficient adaptation. Full denotes a validation-selected endpoint. Budgets are categorical, and the dashed task-LoRA reference uses a different training budget.</p>
+      </div>
+    </div></details>
+    <details class="more result-detail" id="generation-zero-shot"><summary>Zero-shot accuracy and generator training</summary><div class="more-body">
+      <p class="note">FML-CoeffGen learns from stored coefficients and task descriptions, without loading source-task data, LoRA weights or the base model during generator training.</p>
+      <div class="fig" id="figGen">
+          <div class="fig-head"><h3>Zero-shot generation: accuracy and training requirements</h3><div class="seg" role="group" aria-label="Benchmark" id="genBench"></div></div>
+          <div class="chart" id="chGen"></div>
+          <details class="tbl"><summary>Table</summary><div class="tablewrap" id="genTable"></div></details>
+          <p class="src">Table 3. FML-CoeffGen uses 10,000 coefficient reconstruction updates. T2L-L uses 1,000,000 SFT updates. These counts measure generator training, not runtime. Baselines follow Text-to-LoRA.</p>
+        </div>
+    <p class="result-context">T2L-L reaches 77.1% zero-shot accuracy. FML uses source adapters and unlabelled inputs during memory construction, before training the coefficient generator.</p>
+    </div></details><section class="coefficient-structure" id="generation-structure" aria-labelledby="coefficient-structure-title"><div class="fig" id="figTsne">
+            <div class="fig-head"><h3 id="coefficient-structure-title">Task structure in coefficient space</h3></div>
+            <p class="section-intro">Related task categories occupy correlated regions of coefficient space, suggesting that stored coefficients retain task-specific structure.</p>
+            <div class="chips" id="tsneCats" role="group" aria-label="Task category"></div>
+            <div class="chart" id="chTsne" style="margin-top:.6rem"></div>
+            <p class="src">Figure 5. t-SNE of pairwise cosine similarities between vectorized task coefficients.</p>
+          </div></section>
+  </article>
+</section>
+
+<section id="ablations" class="chapter supporting-results" aria-label="Ablation studies">
+  <div class="chapter-head"><h2>Ablation studies</h2><p class="cdek">Ablations on a fixed 64-task SNI stream examine how scale correction and functional admission affect recovery and basis growth.</p></div>
+  <details class="more result-detail">
+    <summary>Scale correction, admission threshold, probes and task inputs</summary>
+    <div class="more-body">
+  <div class="plate">
+    <div class="fig" id="figComp">
+      <div class="fig-head"><h3>Contribution of scale correction and admission criterion</h3></div>
+      <div class="grid3" id="compCharts"></div>
+      <p class="src">Source: Figure 9.</p>
+    </div>
+    <div class="fig" id="figSweep">
+      <div class="fig-head"><h3>Sensitivity to the functional admission settings</h3><div class="seg" role="group" aria-label="Setting" id="sweepSel"></div></div>
+      <div class="grid3" id="sweepCharts"></div>
+      <p class="src">Figures 10–12. Filled points mark the full FML setting. Three stream orders yield 74.80 ± 0.13 ROUGE-L (Table 10).</p>
+    </div>
+  </div>
+    </div>
+  </details>
+</section>
+
+<section id="cite" class="chapter">
+  <div class="col">
+    <div class="bibhead"><h3 style="margin:0">Citation</h3><button class="btn" id="bibCopy">Copy BibTeX</button></div>
+    <p class="section-intro">The manuscript is under review at ICLR 2027.</p>
+    <pre class="bib" id="bib">@misc{fml2027functional,
+  title  = {Continually Learning a Functional Memory from Task Experience},
+  author = {Fungtammasan, Gavin and Huang, Lang},
+  note   = {Under review at ICLR 2027}
+}</pre>
+  </div>
+</section>
+
+<footer>
+  <span>Functional Memory of Low-rank Subspaces · ICLR 2027 submission</span>
+</footer>
+<dialog id="story-dialog"></dialog>
+<script src="story.js?v=section-copy-20261021"></script>
+<script src="story-init.js"></script>
+<script src="assets/vendor/d3-7.9.0.min.js"></script>
+<script src="paper-data.js"></script>
+<script src="toy-engine.js"></script>
+<script src="app.js?v=section-copy-20261021"></script>
+<script src="build-memory.js?v=unreleased-resources-20261021"></script>
+<script src="build-memory-init.js"></script>
+<script src="adaptation-explorer.js?v=unreleased-resources-20261021"></script>
+</body>
+</html>
